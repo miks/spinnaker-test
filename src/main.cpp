@@ -69,6 +69,24 @@ int main(int argc, char **argv) {
   // Register shutdown signal
   signal(SIGINT, HandleSigInt);
 
+  static struct termios orig_term;
+  if (tcgetattr(fileno(stdin), &orig_term) < 0){
+    std::cout << "can't get tty settings" << std::endl;
+    return -1;
+  }
+
+  // put termios in raw mode
+  struct termios term;
+  term.c_iflag |= IGNBRK;
+  term.c_iflag &= ~(INLCR | ICRNL | IXON | IXOFF);
+  term.c_lflag &= ~(ICANON | ECHO | ECHOK | ECHOE | ECHONL | ISIG | IEXTEN);
+  term.c_cc[VMIN] = 1;
+  term.c_cc[VTIME] = 0;
+  if(tcsetattr(fileno(stdin), TCSANOW, &term) < 0) {
+    std::cout << "can't put tty to raw mode" << std::endl;
+    return -1;
+  }
+
   // Initialize camera object
   Camera* camera = new Camera(std::ref(run));
 
@@ -87,8 +105,12 @@ int main(int argc, char **argv) {
   while(run) {
     int keyboard_input = mygetch();
 
+    // CTRL+c
+    if(keyboard_input == 3) {
+      HandleSigInt(0);
+    }
     // detect "c" key pressed
-    if(keyboard_input == 99) {
+    else if(keyboard_input == 99) {
       convert = true;
     }
 
@@ -97,6 +119,11 @@ int main(int argc, char **argv) {
 
   // wait for all threads to be finished
   std::for_each(threads.begin(), threads.end(), std::mem_fn(&std::thread::join));
+
+  // flush and reset terminal
+  if (tcsetattr(fileno(stdin), TCSAFLUSH, &orig_term) < 0) {
+    return -1;
+  }
 
   return 0;
 }

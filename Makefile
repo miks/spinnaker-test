@@ -29,7 +29,7 @@ SOURCES = $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 OBJECTS = $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 
 INC = -isystem lib -I include $(SPINNAKER_INC) -I /usr/include/opencv4
-LIB = $(OPENCV_LIB) $(SPINNAKER_LIB) -l crypto -Wl,-Bdynamic -pthread
+LIB = $(OPENCV_LIB) $(SPINNAKER_LIB) -Wl,-Bdynamic -pthread
 
 ################################################################################
 # Rules/recipes
